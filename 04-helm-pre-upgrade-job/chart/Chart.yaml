@@ -1,0 +1,7 @@
+apiVersion: v2
+name: hook-job-demo
+description: Demonstrate gating a Deployment rollout with a Helm pre-upgrade Job
+type: application
+version: 0.1.0
+appVersion: "1.0"
+

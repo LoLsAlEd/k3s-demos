@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate
+  labels:
+    app.kubernetes.io/name: hook-job-demo
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 30
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hook-job-demo-migration
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migration
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TARGET_REVISION
+              value: {{ .Release.Revision | quote }}
+            - name: SHOULD_FAIL
+              value: {{ .Values.migration.fail | quote }}
+            - name: DELAY_SECONDS
+              value: {{ .Values.migration.delaySeconds | quote }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              echo "Starting migration for Helm revision ${TARGET_REVISION}"
+              sleep "${DELAY_SECONDS}"
+              if [ "${SHOULD_FAIL}" = "true" ]; then
+                echo "Migration failed as requested; the upgrade must stop" >&2
+                exit 1
+              fi
+              echo "Migration completed; the upgrade may continue"
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+

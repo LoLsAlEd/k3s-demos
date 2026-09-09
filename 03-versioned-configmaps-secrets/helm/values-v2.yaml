@@ -1,0 +1,8 @@
+config:
+  revision: v2
+  message: hello from Helm v2
+
+secret:
+  revision: v2
+  token: fake-helm-token-v2
+

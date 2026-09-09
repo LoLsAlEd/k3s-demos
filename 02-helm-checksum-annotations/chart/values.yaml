@@ -1,0 +1,10 @@
+image:
+  repository: busybox
+  tag: 1.36.1
+
+config:
+  message: hello from v1
+
+secret:
+  token: fake-demo-token-v1
+

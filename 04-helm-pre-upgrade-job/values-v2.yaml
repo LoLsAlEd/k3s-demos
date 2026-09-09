@@ -1,0 +1,7 @@
+config:
+  message: hello from v2
+
+migration:
+  fail: false
+  delaySeconds: 2
+

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config-{{ .Values.config.revision }}
+  labels:
+    app.kubernetes.io/name: versioned-config-demo
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    demo.kubernetes.io/config-revision: {{ .Values.config.revision | quote }}
+immutable: true
+data:
+  message: {{ .Values.config.message | quote }}
+

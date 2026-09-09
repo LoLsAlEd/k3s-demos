@@ -1,0 +1,6 @@
+config:
+  message: hello from v2
+
+secret:
+  token: fake-demo-token-v2
+

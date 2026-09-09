@@ -1,0 +1,7 @@
+apiVersion: v2
+name: versioned-config-demo
+description: Demonstrate immutable, version-named configuration with Helm
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
