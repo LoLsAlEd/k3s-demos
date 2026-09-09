@@ -16,6 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: hook-job-demo
         app.kubernetes.io/instance: {{ .Release.Name }}
+      # The Job gates the upgrade; this checksum triggers the rollout afterward.
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
     spec:

@@ -29,11 +29,13 @@ spec:
             - name: DEMO_MESSAGE
               valueFrom:
                 configMapKeyRef:
+                  # ROLLOUT TRIGGER: a new revision changes this Pod-template field.
                   name: {{ .Release.Name }}-config-{{ .Values.config.revision }}
                   key: message
             - name: DEMO_TOKEN
               valueFrom:
                 secretKeyRef:
+                  # The versioned Secret reference also forms part of the template.
                   name: {{ .Release.Name }}-secret-{{ .Values.secret.revision }}
                   key: token
           volumeMounts:
@@ -54,5 +56,5 @@ spec:
       volumes:
         - name: config
           configMap:
+            # Kubelet mounts the same version selected for DEMO_MESSAGE above.
             name: {{ .Release.Name }}-config-{{ .Values.config.revision }}
-

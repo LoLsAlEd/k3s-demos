@@ -1,8 +1,9 @@
+# New content uses a new name ending in `v2`.
 config:
   revision: v2
   message: hello from Helm v2
 
+# Deliberately fake demo secret with a matching new revision.
 secret:
   revision: v2
   token: fake-helm-token-v2
-

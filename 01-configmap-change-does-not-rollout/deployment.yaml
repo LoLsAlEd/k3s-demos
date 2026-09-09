@@ -10,6 +10,12 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: configmap-rollout-demo
+  # ---------------------------------------------------------------------------
+  # ROLLOUT BOUNDARY
+  # Kubernetes creates a new ReplicaSet only when something below this
+  # `template` field changes. Updating the separate ConfigMap is not a change
+  # to this section.
+  # ---------------------------------------------------------------------------
   template:
     metadata:
       labels:
@@ -24,6 +30,7 @@ spec:
             - -c
             - while true; do sleep 3600; done
           env:
+            # Environment variables are read only when the container starts.
             - name: DEMO_MESSAGE
               valueFrom:
                 configMapKeyRef:
@@ -53,7 +60,7 @@ spec:
               drop:
                 - ALL
       volumes:
+        # Mounted ConfigMap files update in the existing Pod after a short delay.
         - name: config
           configMap:
             name: demo-config
-

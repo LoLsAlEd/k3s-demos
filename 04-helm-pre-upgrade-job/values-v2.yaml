@@ -1,7 +1,8 @@
+# The successful hook allows this v2 message to be applied and rolled out.
 config:
   message: hello from v2
 
+# This simulated migration succeeds.
 migration:
   fail: false
   delaySeconds: 2
-

@@ -1,6 +1,7 @@
+# Initial configuration used by the first Helm install.
 config:
   message: hello from v1
 
+# Deliberately fake demo secret.
 secret:
   token: fake-demo-token-v1
-

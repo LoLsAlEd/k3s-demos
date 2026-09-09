@@ -1,7 +1,8 @@
+# Helm must not apply this message when the hook fails.
 config:
   message: hello from v3
 
+# This is intentionally true to demonstrate a blocked upgrade.
 migration:
   fail: true
   delaySeconds: 2
-

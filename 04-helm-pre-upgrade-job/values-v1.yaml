@@ -1,7 +1,8 @@
+# Initial install values. A pre-upgrade hook does not run during installation.
 config:
   message: hello from v1
 
+# Used by later upgrades; kept successful by default.
 migration:
   fail: false
   delaySeconds: 2
-

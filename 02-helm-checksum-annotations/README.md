@@ -7,12 +7,29 @@ terminalRows: 20
 
 ## Concept
 
-Helm renders a SHA-256 checksum of the ConfigMap and Secret into annotations on
-the Deployment's Pod template. Changed configuration produces a new checksum,
-which changes `.spec.template` and triggers a normal rolling update.
+A checksum is a fingerprint of some content. Helm calculates one fingerprint
+for the ConfigMap and another for the Secret, then puts them on the Deployment's
+Pod template.
 
-This is the pattern recommended in Helm's
-[chart tips and tricks](https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments).
+When configuration changes, its fingerprint changes. That changes the Pod
+template, so Kubernetes replaces the Pod. When the configuration is unchanged,
+the fingerprints stay the same and the Pod is left alone.
+
+## Relevant Helm template
+
+These two lines in `chart/templates/deployment.yaml` connect configuration
+changes to the Pod template:
+
+```yaml { ignore=true }
+spec:
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
+```
+
+`include` renders the file and `sha256sum` creates the fingerprint.
 
 ## Expected behavior
 
@@ -59,7 +76,8 @@ kubectl exec -n "$namespace" "$pod" -- sh -c 'echo "Message: $DEMO_MESSAGE"; ech
 
 ## Perform a no-op upgrade
 
-This assertion proves that a Helm release revision alone does not roll the Pod.
+This cell checks that running Helm again with the same values keeps the same
+Pod.
 
 ```sh { name=no-op-upgrade-does-not-roll }
 set -eu
@@ -110,15 +128,19 @@ echo "Message:       $message"
 echo "Token:         $token"
 ```
 
-## Production notes
+## Good to know
 
-- Hash rendered resources, not only one hand-picked value, so all relevant
-   content changes affect the checksum.
+- Hash the rendered resource so every relevant change affects the checksum.
 - Use separate annotations for configuration and secrets to make changes easier
-   to diagnose.
-- A checksum triggers Kubernetes' normal Deployment strategy; readiness probes,
-   disruption budgets, and sufficient capacity still determine rollout safety.
+  to see.
+- Kubernetes still uses the Deployment's normal rolling-update settings.
 - Never print real secret values as this demo does for illustration.
+
+## Learn more
+
+- [Helm: automatically roll Deployments](https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
+- [Helm template functions](https://helm.sh/docs/chart_template_guide/function_list/)
+- [Kubernetes Deployment updates](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment)
 
 ## Cleanup
 

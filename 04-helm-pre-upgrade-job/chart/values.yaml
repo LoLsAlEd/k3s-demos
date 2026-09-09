@@ -2,10 +2,11 @@ image:
   repository: busybox
   tag: 1.36.1
 
+# A changed message rolls out only after the pre-upgrade hook succeeds.
 config:
   message: hello from v1
 
+# Set fail to true to make the gate reject an upgrade.
 migration:
   fail: false
   delaySeconds: 2
-

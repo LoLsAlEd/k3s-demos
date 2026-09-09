@@ -26,11 +26,13 @@ spec:
             - name: DEMO_MESSAGE
               valueFrom:
                 configMapKeyRef:
+                  # Kustomize replaces this base name with its generated hash name.
                   name: demo-config
                   key: message
             - name: DEMO_TOKEN
               valueFrom:
                 secretKeyRef:
+                  # Kustomize also rewrites Secret references automatically.
                   name: demo-secret
                   key: token
           volumeMounts:
@@ -51,5 +53,5 @@ spec:
       volumes:
         - name: config
           configMap:
+            # The generated hash becomes part of the Pod template and rolls Pods.
             name: demo-config
-

@@ -1,6 +1,7 @@
+# These changed values produce new checksums and trigger the rollout.
 config:
   message: hello from v2
 
+# Deliberately fake demo secret.
 secret:
   token: fake-demo-token-v2
-

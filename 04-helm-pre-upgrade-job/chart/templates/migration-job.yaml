@@ -5,12 +5,19 @@ metadata:
   labels:
     app.kubernetes.io/name: hook-job-demo
     app.kubernetes.io/instance: {{ .Release.Name }}
+  # ---------------------------------------------------------------------------
+  # HELM HOOK
+  # Run this Job before updating normal release resources. Keep the latest Job
+  # for logs, then remove it before the next upgrade creates a replacement.
+  # ---------------------------------------------------------------------------
   annotations:
     helm.sh/hook: pre-upgrade
     helm.sh/hook-weight: "-5"
     helm.sh/hook-delete-policy: before-hook-creation
 spec:
+  # Fail once and report the error to Helm rather than retrying this demo Job.
   backoffLimit: 0
+  # Bound execution time and clean up the retained Job after ten minutes.
   activeDeadlineSeconds: 30
   ttlSecondsAfterFinished: 600
   template:
@@ -38,6 +45,7 @@ spec:
               set -eu
               echo "Starting migration for Helm revision ${TARGET_REVISION}"
               sleep "${DELAY_SECONDS}"
+              # values-v3-fail.yaml sets this to true to demonstrate the gate.
               if [ "${SHOULD_FAIL}" = "true" ]; then
                 echo "Migration failed as requested; the upgrade must stop" >&2
                 exit 1
@@ -54,4 +62,3 @@ spec:
             capabilities:
               drop:
                 - ALL
-

@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  # The revision is part of the name. Changing v1 to v2 creates a new object.
   name: {{ .Release.Name }}-config-{{ .Values.config.revision }}
   labels:
     app.kubernetes.io/name: versioned-config-demo
     app.kubernetes.io/instance: {{ .Release.Name }}
     demo.kubernetes.io/config-revision: {{ .Values.config.revision | quote }}
+# This version cannot be edited in place. Create a new revision instead.
 immutable: true
 data:
   message: {{ .Values.config.message | quote }}
-

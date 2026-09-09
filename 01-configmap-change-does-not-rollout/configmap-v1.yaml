@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: demo-config
   namespace: demo-01-configmap
+# Changing this data updates the ConfigMap object only.
+# It does not change the Deployment's Pod template, so it does not start a rollout.
 data:
   message: hello from v1
-

@@ -3,6 +3,8 @@ kind: Kustomization
 namespace: demo-03-kustomize
 resources:
   - ../../base
+# Changing these literals produces different generated name suffixes from v1.
+# The rewritten Deployment references then trigger a rollout.
 configMapGenerator:
   - name: demo-config
     literals:
@@ -12,8 +14,8 @@ secretGenerator:
     literals:
       - token=fake-kustomize-token-v2
 generatorOptions:
+  # Keep suffix hashing enabled and prevent in-place changes to this version.
   disableNameSuffixHash: false
   immutable: true
   labels:
     app.kubernetes.io/part-of: versioned-config-demo
-

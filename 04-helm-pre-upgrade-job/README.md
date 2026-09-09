@@ -7,16 +7,37 @@ terminalRows: 24
 
 ## Concept
 
-A `pre-upgrade` hook runs after Helm renders and validates the chart but before
-Helm updates the release resources. Helm waits for a hook Job to complete. If the
-Job fails, the upgrade fails and Helm does not apply the new Deployment or
-ConfigMap.
+A Kubernetes Job runs a task until it succeeds or fails. Helm hooks let a chart
+run a Job at a chosen point in an install or upgrade.
+
+This demo uses a `pre-upgrade` hook as a checkpoint. Helm waits for the Job
+before updating the application. A successful Job lets the upgrade continue; a
+failed Job stops it.
 
 This models a database migration without requiring a database. The application
-still uses a checksum annotation to trigger its actual rollout after the gate
+uses a checksum annotation to trigger its rollout after the checkpoint
 succeeds.
 
-See Helm's [chart hook lifecycle](https://helm.sh/docs/topics/charts_hooks/).
+## Relevant Helm hook
+
+These annotations turn the Kubernetes Job into a Helm hook:
+
+```yaml { ignore=true }
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 0
+```
+
+- `pre-upgrade` runs the Job before Helm changes the application.
+- `before-hook-creation` removes the previous hook Job before the next attempt.
+- `backoffLimit: 0` makes this short demo report a failure without retrying.
 
 ## Expected behavior
 
@@ -55,8 +76,8 @@ kubectl exec -n demo-04-hook-job "$pod" -- printenv DEMO_MESSAGE
 
 ## Run a successful upgrade
 
-The completed hook is intentionally retained long enough to inspect its logs.
-The next upgrade removes it before creating a new hook with the same name.
+The completed Job is kept long enough for you to read its logs. The next upgrade
+removes it before creating another Job with the same name.
 
 ```sh { name=successful-pre-upgrade-hook }
 set -eu
@@ -84,8 +105,8 @@ echo "Message: $message"
 
 ## Run an intentionally failing upgrade
 
-The Helm command must fail for this assertion to pass. The cell captures that
-expected error so Runme reports the demonstration itself as successful.
+The Helm command is expected to fail. The cell handles that expected error so
+Runme reports the demonstration as successful.
 
 ```sh { name=failing-hook-blocks-upgrade }
 set -eu
@@ -124,18 +145,21 @@ echo "Pod message:        $message_in_pod"
 echo "The failed pre-upgrade hook blocked v3 as expected."
 ```
 
-## Production notes
+## Good to know
 
-- Hook Jobs are separate lifecycle resources, not ordinary release resources.
-   Define an explicit deletion or TTL policy.
+- Hook Jobs are not managed like ordinary chart resources. Give them a cleanup
+  policy or a Job TTL.
 - `before-hook-creation` preserves the latest Job for debugging and removes it
-   before the next attempt. This demo also uses a ten-minute Job TTL.
-- Keep migrations backward-compatible with both the old and new application
-   versions during a rolling update.
-- Helm does not transactionally undo external side effects performed by a hook.
-   Design migrations to be idempotent and recoverable.
-- Use `--atomic` only with a clear understanding of what Helm can roll back; it
-   cannot reverse an arbitrary database migration.
+  before the next attempt. This demo also uses a ten-minute Job TTL.
+- A real migration should be safe to run again if an upgrade is retried.
+- Helm can stop an upgrade, but it cannot undo changes that a Job already made
+  to an external database or service.
+
+## Learn more
+
+- [Helm chart hooks](https://helm.sh/docs/topics/charts_hooks/)
+- [Kubernetes Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/)
+- [Kubernetes Deployment rolling updates](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment)
 
 ## Cleanup
 

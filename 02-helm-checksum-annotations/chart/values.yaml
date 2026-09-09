@@ -2,9 +2,10 @@ image:
   repository: busybox
   tag: 1.36.1
 
+# Changing either value changes its matching checksum in the Pod template.
 config:
   message: hello from v1
 
+# This is a fake value for the demo. Never commit real secrets to a values file.
 secret:
   token: fake-demo-token-v1
-

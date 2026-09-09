@@ -2,11 +2,12 @@ image:
   repository: busybox
   tag: 1.36.1
 
+# Increment the revision whenever the matching content changes.
 config:
   revision: v1
   message: hello from Helm v1
 
+# Increment this revision with the Secret content. The token is demo-only.
 secret:
   revision: v1
   token: fake-helm-token-v1
-

@@ -16,6 +16,11 @@ spec:
       labels:
         app.kubernetes.io/name: checksum-demo
         app.kubernetes.io/instance: {{ .Release.Name }}
+      # -----------------------------------------------------------------------
+      # ROLLOUT TRIGGER
+      # These values are fingerprints of the rendered ConfigMap and Secret.
+      # Changed content -> changed annotation -> changed Pod template -> rollout.
+      # -----------------------------------------------------------------------
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}

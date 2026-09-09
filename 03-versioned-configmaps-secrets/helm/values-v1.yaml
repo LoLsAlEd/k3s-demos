@@ -1,8 +1,9 @@
+# Initial immutable resource names end in `v1`.
 config:
   revision: v1
   message: hello from Helm v1
 
+# Deliberately fake demo secret.
 secret:
   revision: v1
   token: fake-helm-token-v1
-

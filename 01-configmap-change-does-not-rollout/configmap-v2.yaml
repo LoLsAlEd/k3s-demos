@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: demo-config
   namespace: demo-01-configmap
+# This updates the existing ConfigMap from v1 to v2.
+# The Deployment still points to the same name: demo-config.
 data:
   message: hello from v2
-

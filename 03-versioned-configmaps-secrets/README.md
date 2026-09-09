@@ -7,14 +7,50 @@ terminalRows: 24
 
 ## Concept
 
-Instead of changing an existing object, create a new immutable ConfigMap or
-Secret with a new name and update the Deployment to reference it. The reference
-is part of `.spec.template`, so the name change triggers a rollout.
+In this pattern, each configuration version gets a different name. For example,
+`app-config-v1` becomes `app-config-v2`. The Deployment must point to the new
+name, and that change causes Kubernetes to replace the Pod.
+
+The ConfigMaps and Secrets are also marked immutable, which means Kubernetes
+will reject attempts to edit them in place. To make a change, create a new
+version instead.
 
 This demo shows two approaches:
 
 1. Helm uses explicit `v1` and `v2` revision values in resource names.
 2. Kustomize derives a name suffix from the generated content.
+
+## Relevant YAML
+
+The Helm chart builds the version into the resource name and into the
+Deployment reference:
+
+```yaml { ignore=true }
+# ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config-{{ .Values.config.revision }}
+immutable: true
+
+# Deployment volume reference
+configMap:
+  name: {{ .Release.Name }}-config-{{ .Values.config.revision }}
+```
+
+Kustomize generates the version for you. Its default name suffix is based on
+the generated content:
+
+```yaml { ignore=true }
+configMapGenerator:
+  - name: demo-config
+    literals:
+      - message=hello from Kustomize v2
+secretGenerator:
+  - name: demo-secret
+    literals:
+      - token=fake-kustomize-token-v2
+generatorOptions:
+  immutable: true
+```
 
 ## Expected behavior
 
@@ -84,10 +120,9 @@ echo "Message:   $message"
 echo "Token:     $token"
 ```
 
-Helm removes the v1 resources because they are no longer in the current release
-manifest. Changing the content while keeping `revision: v1` would instead try to
-patch an immutable resource and fail. Treat the revision and content as one
-change.
+Helm removes the v1 resources after the upgrade because the current release no
+longer includes them. Always change the revision when changing the content;
+otherwise Helm tries to edit an immutable object and the upgrade fails.
 
 ## Variant B: content hashes with Kustomize
 
@@ -136,21 +171,24 @@ echo "Message:   $message"
 echo "Token:     $token"
 ```
 
-Kustomize creates the v2 objects but plain `kubectl apply -k` does not delete
-the old generated objects. Keeping the previous revision briefly makes rollback
-possible, but production workflows need an explicit, rollout-aware retention or
-pruning policy.
+Kustomize creates the v2 objects but does not delete the v1 objects in this
+demo. Keeping an old version can help with rollback, but old versions should be
+cleaned up after no Pods use them.
 
-## Production notes
+## Good to know
 
-- Immutable objects prevent accidental in-place changes and reduce API-server
-   watches at scale.
-- Versioned names make rollbacks explicit: roll the Pod template back to an old
-   resource name.
-- Retain old versions until no running Pod references them, then prune according
-   to a defined policy.
+- Immutable objects protect a version from being changed accidentally.
+- To roll back, point the Deployment back to an earlier resource name.
+- Do not delete an old version while a running Pod still refers to it.
 - Do not put real secret material in values files or Kustomize literals committed
-   to source control.
+  to source control.
+
+## Learn more
+
+- [Kubernetes immutable ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/#immutable-configmaps)
+- [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
+- [Kustomize generators](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#generating-resources)
+- [Helm values files](https://helm.sh/docs/chart_template_guide/values_files/)
 
 ## Cleanup
 

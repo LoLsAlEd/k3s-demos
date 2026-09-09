@@ -7,19 +7,44 @@ terminalRows: 20
 
 ## Concept
 
-A Deployment creates a new ReplicaSet only when its Pod template
-(`.spec.template`) changes. A ConfigMap is a separate object, so editing it does
-not change the Pod template and does not trigger a rollout.
+A rollout means that a Deployment replaces its Pods with new Pods. Kubernetes
+starts a rollout when the Pod template inside the Deployment changes.
+
+A ConfigMap is stored separately from the Deployment. Changing the ConfigMap
+does not change the Pod template, so Kubernetes keeps the existing Pod running.
 
 This Pod consumes the same ConfigMap in two ways:
 
-- `DEMO_MESSAGE` is an environment variable. It is fixed when the container
-   starts and remains at v1 until the Pod is replaced.
-- `/etc/demo/message` is a mounted volume. Kubernetes eventually projects the
-   v2 content into the existing Pod without restarting it.
+- `DEMO_MESSAGE` is read when the container starts. It stays at v1 until the Pod
+   is replaced.
+- `/etc/demo/message` is a mounted file. Kubernetes updates this file in the
+   existing Pod after a short delay.
 
-See the Kubernetes documentation for [Deployment rollout triggers](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment)
-and [ConfigMap update behavior](https://kubernetes.io/docs/concepts/configuration/configmap/#mounted-configmaps-are-updated-automatically).
+## Relevant YAML
+
+The Deployment refers to the ConfigMap, but the ConfigMap data is not copied
+into the Pod template. Later in the demo, adding the annotation shown below
+changes the template and causes a rollout.
+
+```yaml { ignore=true }
+spec:
+  template:
+    metadata:
+      annotations:
+        demo.kubernetes.io/config-revision: v2 # This template change rolls Pods
+    spec:
+      containers:
+        - env:
+            - name: DEMO_MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-config
+                  key: message
+      volumes:
+        - name: config
+          configMap:
+            name: demo-config
+```
 
 ## Expected behavior
 
@@ -62,8 +87,8 @@ kubectl exec -n demo-01-configmap "$pod" -- sh -c 'echo "Environment: $DEMO_MESS
 
 ## Modify only the ConfigMap
 
-This assertion waits up to 60 seconds for the mounted volume to update, then
-proves that neither the Pod nor the Deployment revision changed.
+This cell waits for the mounted file to update, then checks that Kubernetes kept
+the same Pod and Deployment revision.
 
 ```sh { name=update-configmap-without-rollout }
 set -eu
@@ -103,9 +128,8 @@ echo "Updated volume:     $volume"
 
 ## Change the Pod template
 
-The annotation has no meaning to the application. Its location under
-`.spec.template.metadata` is what matters: the Deployment controller sees a new
-Pod template and starts a rollout.
+The application does not use this annotation. It triggers a rollout simply
+because it changes the Deployment's Pod template.
 
 ```sh { name=trigger-rollout-with-template-annotation }
 set -eu
@@ -133,13 +157,20 @@ echo "Environment:     $environment"
 echo "Volume:          $volume"
 ```
 
-## Production notes
+## Good to know
 
-- Volume projection is eventually consistent; do not assume it is immediate.
+- A mounted ConfigMap can take a short time to update.
 - ConfigMaps mounted with `subPath` do not receive projected updates.
-- Applications must reload mounted files themselves if they cache configuration.
-- Environment variables always require a new container process to pick up a
-   change.
+- An application may need its own reload feature before it notices a changed
+   file.
+- ConfigMap-backed environment variables update only when a new container
+   starts.
+
+## Learn more
+
+- [Updating a Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment)
+- [Updating configuration using a ConfigMap](https://kubernetes.io/docs/tutorials/configuration/updating-configuration-via-a-configmap/)
+- [Mounted ConfigMaps and update behavior](https://kubernetes.io/docs/concepts/configuration/configmap/#mounted-configmaps-are-updated-automatically)
 
 ## Cleanup
 

@@ -5,10 +5,20 @@ terminalRows: 20
 
 # Kubernetes automatic rolling deployment demos
 
-Small, executable demonstrations of how configuration changes interact with
-Kubernetes Deployments. Open any demo `README.md` with the
+Beginner-friendly, executable demonstrations of how configuration changes work
+with Kubernetes Deployments. Open any demo `README.md` with the
 [Runme extension](https://docs.runme.dev/installation/vscode/) and run its cells
 from top to bottom.
+
+If these terms are new:
+
+- A **Pod** runs one or more containers.
+- A **Deployment** manages Pods and replaces them during a rollout.
+- A **ConfigMap** stores non-secret configuration.
+- A **Secret** stores sensitive configuration. The examples use fake values.
+
+Start with demo 01. It shows the default Kubernetes behavior that the later
+demos improve.
 
 ## Prerequisites
 
@@ -46,12 +56,17 @@ a cleanup cell, so you can run the examples in any order.
 > Kubernetes Secrets are not encrypted merely because they use the `Secret`
 > resource kind. Use a real secret-management workflow in production.
 
-## What the sequence teaches
+## What each demo teaches
 
-| Demo | Rollout trigger | Main lesson |
+| Demo | What you will see | Main lesson |
 | --- | --- | --- |
-| 01 | Manual change under `.spec.template` | A referenced ConfigMap is outside the Pod template |
-| 02 | A rendered checksum annotation changes | Helm can connect config content to the Pod template |
-| 03 | A referenced resource name changes | Immutable/versioned config gives every revision a distinct identity |
-| 04 | Config checksum after a successful hook | A pre-upgrade Job can gate, but not transactionally wrap, a rollout |
+| 01 | A ConfigMap changes but the Pod does not | Config changes do not automatically roll a Deployment |
+| 02 | Helm changes a checksum and replaces the Pod | A checksum connects config changes to a rollout |
+| 03 | The Deployment points to a new config name | Versioned names make each configuration distinct |
+| 04 | A Job succeeds or fails before an upgrade | A Helm hook can allow or stop an upgrade |
 
+## General documentation
+
+- [Kubernetes concepts](https://kubernetes.io/docs/concepts/)
+- [Kubernetes Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- [Helm chart template guide](https://helm.sh/docs/chart_template_guide/)

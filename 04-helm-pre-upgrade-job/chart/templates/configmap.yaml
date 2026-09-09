@@ -1,5 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
+# After the hook succeeds, changing this data changes the Deployment checksum
+# and starts the application rollout.
 metadata:
   name: {{ .Release.Name }}-config
   labels:
@@ -7,4 +9,3 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   message: {{ .Values.config.message | quote }}
-

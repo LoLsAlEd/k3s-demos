@@ -3,6 +3,11 @@ kind: Kustomization
 namespace: demo-03-kustomize
 resources:
   - ../../base
+# -----------------------------------------------------------------------------
+# HASHED RESOURCE NAMES
+# Kustomize adds a content-based suffix to both generated names and rewrites the
+# matching references in the Deployment automatically.
+# -----------------------------------------------------------------------------
 configMapGenerator:
   - name: demo-config
     literals:
@@ -12,8 +17,8 @@ secretGenerator:
     literals:
       - token=fake-kustomize-token-v1
 generatorOptions:
+  # Keep suffix hashing enabled and prevent in-place changes to this version.
   disableNameSuffixHash: false
   immutable: true
   labels:
     app.kubernetes.io/part-of: versioned-config-demo
-
