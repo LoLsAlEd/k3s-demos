@@ -5,18 +5,18 @@ terminalRows: 30
 
 # 05 — Preview changes with `kubectl diff` and `helm diff`
 
-## Concept
+## What this demo shows
 
-A diff is a preview of what will change. Removed lines normally begin with `-`
+A diff is a preview of what will change. Removed lines usually begin with `-`,
 and added lines begin with `+`.
 
 - `kubectl diff` compares YAML files with the resources currently running in
-   the cluster.
-- `helm diff upgrade` compares an installed Helm release with a chart and values
-   you are considering for the next upgrade.
+  the cluster.
+- `helm diff upgrade` compares an installed Helm release with a chart and the
+  values you are considering for the next upgrade.
 
-Neither diff command applies the proposed changes. You still need to run
-`kubectl apply` or `helm upgrade` after reviewing the preview.
+Neither command applies the proposed changes. After reviewing the preview, you
+still need to run `kubectl apply` or `helm upgrade`.
 
 ## Relevant commands
 
@@ -28,18 +28,18 @@ helm diff upgrade diff-demo ./helm/chart \
   --values helm/values-v2.yaml
 ```
 
-The runnable cells use an additional exit-code option so they can check the
-result:
+The runnable cells check the command's exit code as well as its output:
 
 - `kubectl diff` returns `0` when there are no changes and `1` when it finds
-   changes. A value greater than `1` means an error occurred.
+  changes. A value greater than `1` means an error occurred.
 - `helm diff --detailed-exitcode` returns `0` for no changes and `2` when it
-   finds changes.
+  finds changes.
 
-## Expected behavior
+## What to expect
 
 1. Deploy the v1 Kubernetes YAML and Helm values.
-2. Preview v2 and see the proposed ConfigMap, replica, and Pod-template changes.
+2. Preview v2 and see the proposed ConfigMap, replica, and Pod-template
+   changes.
 3. Apply v2.
 4. Run the same diff again and see that nothing remains to change.
 
@@ -77,8 +77,9 @@ kubectl rollout status deployment/kubectl-diff-demo -n demo-05-diff --timeout=90
 
 ### Preview the v2 YAML
 
-Finding differences is the expected result, but `kubectl diff` reports that as
-exit code `1`. This cell handles the expected code so Runme displays success.
+Finding differences is the expected result, but `kubectl diff` reports that with
+exit code `1`. This cell handles that expected code so Runme can show the cell
+as successful.
 
 ```sh { name=preview-with-kubectl-diff }
 set -eu
@@ -129,7 +130,7 @@ helm upgrade --install diff-demo ./helm/chart \
 ### Preview the Helm v2 values
 
 The plugin reads the installed release and renders the local chart with the v2
-values. `--no-color` keeps the saved notebook output easy to read.
+values. `--no-color` keeps the saved output easy to read.
 
 ```sh { name=preview-with-helm-diff }
 set -eu
@@ -176,17 +177,17 @@ test -z "$output"
 echo "helm diff is now empty because the release uses the v2 values."
 ```
 
-## Good to know
+## A few useful details
 
 - Always check which Kubernetes context and namespace you are comparing.
 - A clean diff means the rendered input matches the live resource; it does not
-   prove that the application is healthy.
+  prove that the application is healthy.
 - Helm charts can render differently based on values, chart versions, and
-   cluster capabilities. Diff the same inputs you plan to upgrade with.
+  cluster capabilities. Diff the same inputs you plan to use for the upgrade.
 - Diffs may include defaulted or generated fields. Read the whole preview before
-   deciding whether a change is safe.
+  deciding whether a change is safe.
 - Helm diff hides Secret contents by default. Avoid options that reveal secrets
-   in terminals, logs, or CI output.
+  in terminals, logs, or CI output.
 
 ## Learn more
 

@@ -3,24 +3,24 @@ shell: bash
 terminalRows: 24
 ---
 
-# 04 — Gate an upgrade with a Helm hook Job
+# 04 — Check an upgrade with a Helm pre-upgrade Job
 
-## Concept
+## What this demo shows
 
 A Kubernetes Job runs a task until it succeeds or fails. Helm hooks let a chart
-run a Job at a chosen point in an install or upgrade.
+run a Job at a particular point during an install or upgrade.
 
 This demo uses a `pre-upgrade` hook as a checkpoint. Helm waits for the Job
-before updating the application. A successful Job lets the upgrade continue; a
-failed Job stops it.
+before it updates the application. If the Job succeeds, the upgrade continues.
+If it fails, Helm stops the upgrade.
 
-This models a database migration without requiring a database. The application
-uses a checksum annotation to trigger its rollout after the checkpoint
-succeeds.
+This is similar to running a database migration, but it does not need a
+database. After the checkpoint succeeds, a checksum annotation tells
+Kubernetes to roll out the new application configuration.
 
-## Relevant Helm hook
+## The hook annotations
 
-These annotations turn the Kubernetes Job into a Helm hook:
+These annotations tell Helm to treat the Kubernetes Job as a hook:
 
 ```yaml { ignore=true }
 apiVersion: batch/v1
@@ -37,14 +37,15 @@ spec:
 
 - `pre-upgrade` runs the Job before Helm changes the application.
 - `before-hook-creation` removes the previous hook Job before the next attempt.
-- `backoffLimit: 0` makes this short demo report a failure without retrying.
+- `backoffLimit: 0` makes this demo report a failure without retrying.
 
-## Expected behavior
+## What to expect
 
-1. The initial install creates v1; `pre-upgrade` does not run during install.
-2. The v2 migration Job succeeds, then the v2 configuration rolls out.
-3. The v3 migration Job fails, so the running ConfigMap, Deployment, and Pod
-   remain at v2.
+1. The initial install creates v1. The `pre-upgrade` hook does not run during
+   install.
+2. The v2 migration Job succeeds, and then the v2 configuration rolls out.
+3. The v3 migration Job fails, so the ConfigMap, Deployment, and Pod stay at
+   v2.
 
 ## Prerequisites
 
@@ -74,10 +75,10 @@ pod=$(kubectl get pods -n demo-04-hook-job \
 kubectl exec -n demo-04-hook-job "$pod" -- printenv DEMO_MESSAGE
 ```
 
-## Run a successful upgrade
+## Try a successful upgrade
 
-The completed Job is kept long enough for you to read its logs. The next upgrade
-removes it before creating another Job with the same name.
+The completed Job is kept long enough for you to read its logs. The next
+upgrade removes it before creating another Job with the same name.
 
 ```sh { name=successful-pre-upgrade-hook }
 set -eu
@@ -103,10 +104,10 @@ echo "New Pod: $pod_after"
 echo "Message: $message"
 ```
 
-## Run an intentionally failing upgrade
+## Try an upgrade that fails
 
-The Helm command is expected to fail. The cell handles that expected error so
-Runme reports the demonstration as successful.
+The Helm command is expected to fail. The cell captures that expected error so
+Runme can still report the demonstration as successful.
 
 ```sh { name=failing-hook-blocks-upgrade }
 set -eu
@@ -145,13 +146,13 @@ echo "Pod message:        $message_in_pod"
 echo "The failed pre-upgrade hook blocked v3 as expected."
 ```
 
-## Good to know
+## A few useful details
 
 - Hook Jobs are not managed like ordinary chart resources. Give them a cleanup
   policy or a Job TTL.
-- `before-hook-creation` preserves the latest Job for debugging and removes it
-  before the next attempt. This demo also uses a ten-minute Job TTL.
-- A real migration should be safe to run again if an upgrade is retried.
+- `before-hook-creation` keeps the latest Job available for debugging, then
+  removes it before the next attempt. This demo also uses a ten-minute Job TTL.
+- A real migration should be safe to run again if someone retries an upgrade.
 - Helm can stop an upgrade, but it cannot undo changes that a Job already made
   to an external database or service.
 

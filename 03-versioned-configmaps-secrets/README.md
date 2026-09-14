@@ -3,27 +3,27 @@ shell: bash
 terminalRows: 24
 ---
 
-# 03 — Versioned ConfigMaps and Secrets
+# 03 — Give each ConfigMap and Secret its own version
 
-## Concept
+## What this demo shows
 
-In this pattern, each configuration version gets a different name. For example,
-`app-config-v1` becomes `app-config-v2`. The Deployment must point to the new
-name, and that change causes Kubernetes to replace the Pod.
+In this pattern, every configuration version gets a different name. For
+example, `app-config-v1` becomes `app-config-v2`. The Deployment then points to
+the new name, and that change causes Kubernetes to replace the Pod.
 
-The ConfigMaps and Secrets are also marked immutable, which means Kubernetes
-will reject attempts to edit them in place. To make a change, create a new
+The ConfigMaps and Secrets are marked immutable. That means Kubernetes rejects
+attempts to edit them in place. To change the configuration, create a new
 version instead.
 
-This demo shows two approaches:
+This demo shows two ways to do that:
 
-1. Helm uses explicit `v1` and `v2` revision values in resource names.
-2. Kustomize derives a name suffix from the generated content.
+1. Helm uses an explicit `v1` or `v2` revision in each resource name.
+2. Kustomize creates a name suffix from the generated content.
 
-## Relevant YAML
+## The important YAML
 
-The Helm chart builds the version into the resource name and into the
-Deployment reference:
+The Helm chart puts the version in the resource name and in the Deployment's
+reference to that resource:
 
 ```yaml { ignore=true }
 # ConfigMap
@@ -36,8 +36,8 @@ configMap:
   name: {{ .Release.Name }}-config-{{ .Values.config.revision }}
 ```
 
-Kustomize generates the version for you. Its default name suffix is based on
-the generated content:
+Kustomize generates the version for you. By default, its name suffix is based
+on the generated content:
 
 ```yaml { ignore=true }
 configMapGenerator:
@@ -52,11 +52,11 @@ generatorOptions:
   immutable: true
 ```
 
-## Expected behavior
+## What to expect
 
 Both variants replace the Pod because the ConfigMap and Secret references in
-the Pod template change. The new Pod reads v2 configuration from newly created,
-immutable resources.
+the Pod template change. The new Pod reads the v2 configuration from newly
+created, immutable resources.
 
 ## Prerequisites
 
@@ -121,8 +121,9 @@ echo "Token:     $token"
 ```
 
 Helm removes the v1 resources after the upgrade because the current release no
-longer includes them. Always change the revision when changing the content;
-otherwise Helm tries to edit an immutable object and the upgrade fails.
+longer includes them. Remember to change the revision whenever you change the
+content. Otherwise Helm tries to edit an immutable object and the upgrade
+fails.
 
 ## Variant B: content hashes with Kustomize
 
@@ -172,16 +173,16 @@ echo "Token:     $token"
 ```
 
 Kustomize creates the v2 objects but does not delete the v1 objects in this
-demo. Keeping an old version can help with rollback, but old versions should be
-cleaned up after no Pods use them.
+demo. Keeping an old version can make rollback easier, but clean up old
+versions once no Pods use them.
 
-## Good to know
+## A few useful details
 
-- Immutable objects protect a version from being changed accidentally.
+- Immutable objects protect a version from accidental changes.
 - To roll back, point the Deployment back to an earlier resource name.
 - Do not delete an old version while a running Pod still refers to it.
-- Do not put real secret material in values files or Kustomize literals committed
-  to source control.
+- Do not put real secret material in values files or Kustomize literals that are
+  committed to source control.
 
 ## Learn more
 

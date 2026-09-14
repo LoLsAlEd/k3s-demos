@@ -3,22 +3,23 @@ shell: bash
 terminalRows: 20
 ---
 
-# 02 — Helm checksum annotations
+# 02 — Use Helm checksums to restart Pods when config changes
 
-## Concept
+## What this demo shows
 
-A checksum is a fingerprint of some content. Helm calculates one fingerprint
-for the ConfigMap and another for the Secret, then puts them on the Deployment's
-Pod template.
+A checksum is a short fingerprint of some content. In this example, Helm
+calculates one for the ConfigMap and another for the Secret, then adds both
+fingerprints to the Deployment's Pod template.
 
-When configuration changes, its fingerprint changes. That changes the Pod
-template, so Kubernetes replaces the Pod. When the configuration is unchanged,
-the fingerprints stay the same and the Pod is left alone.
+When the configuration changes, its fingerprint changes too. Because the
+fingerprint is part of the Pod template, Kubernetes sees a template change and
+replaces the Pod. If the configuration has not changed, the fingerprints stay
+the same and Kubernetes leaves the Pod alone.
 
 ## Relevant Helm template
 
-These two lines in `chart/templates/deployment.yaml` connect configuration
-changes to the Pod template:
+These two lines in `chart/templates/deployment.yaml` connect the configuration
+to the Pod template:
 
 ```yaml { ignore=true }
 spec:
@@ -29,13 +30,14 @@ spec:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
 ```
 
-`include` renders the file and `sha256sum` creates the fingerprint.
+`include` renders the resource template, and `sha256sum` turns the result into
+the fingerprint.
 
-## Expected behavior
+## What to expect
 
-1. Installing v1 creates one Pod with v1 configuration.
-2. Upgrading with the same values changes the Helm release revision, but not the
-   Pod template or Pod UID.
+1. Installing v1 creates a Pod with the v1 configuration.
+2. Running Helm again with the same values creates a new release revision, but
+   keeps the same Pod template and Pod UID.
 3. Upgrading to v2 changes both checksums and replaces the Pod.
 
 ## Prerequisites
@@ -74,10 +76,10 @@ kubectl get deployment checksum-demo -n "$namespace" \
 kubectl exec -n "$namespace" "$pod" -- sh -c 'echo "Message: $DEMO_MESSAGE"; echo "Token:   $DEMO_TOKEN"; echo "Volume:  $(cat /etc/demo/message)"'
 ```
 
-## Perform a no-op upgrade
+## Run an upgrade with no configuration changes
 
-This cell checks that running Helm again with the same values keeps the same
-Pod.
+This cell runs Helm again with the same values and checks that the Pod stays the
+same.
 
 ```sh { name=no-op-upgrade-does-not-roll }
 set -eu
@@ -128,13 +130,14 @@ echo "Message:       $message"
 echo "Token:         $token"
 ```
 
-## Good to know
+## A few useful details
 
-- Hash the rendered resource so every relevant change affects the checksum.
-- Use separate annotations for configuration and secrets to make changes easier
-  to see.
+- Hash the rendered resource so every relevant change updates the checksum.
+- Use separate annotations for configuration and secrets so it is easier to see
+  what changed.
 - Kubernetes still uses the Deployment's normal rolling-update settings.
-- Never print real secret values as this demo does for illustration.
+- Never print real secret values. This demo does so only because the values are
+  fake and the output makes the behavior easy to see.
 
 ## Learn more
 

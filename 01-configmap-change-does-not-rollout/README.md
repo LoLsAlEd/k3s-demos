@@ -3,28 +3,29 @@ shell: bash
 terminalRows: 20
 ---
 
-# 01 — A ConfigMap change does not trigger a rollout
+# 01 — Changing a ConfigMap does not restart a Pod
 
-## Concept
+## What this demo shows
 
-A rollout means that a Deployment replaces its Pods with new Pods. Kubernetes
-starts a rollout when the Pod template inside the Deployment changes.
+Kubernetes starts a rollout when the Pod template in a Deployment changes. A
+rollout replaces the old Pod with a new one.
 
-A ConfigMap is stored separately from the Deployment. Changing the ConfigMap
-does not change the Pod template, so Kubernetes keeps the existing Pod running.
+The ConfigMap in this demo is stored separately from the Deployment. Changing
+the ConfigMap does not change the Pod template, so Kubernetes leaves the
+existing Pod running.
 
-This Pod consumes the same ConfigMap in two ways:
+The Pod reads the same ConfigMap in two different ways:
 
-- `DEMO_MESSAGE` is read when the container starts. It stays at v1 until the Pod
-   is replaced.
+- `DEMO_MESSAGE` is read when the container starts. It stays at v1 until the
+  Pod is replaced.
 - `/etc/demo/message` is a mounted file. Kubernetes updates this file in the
-   existing Pod after a short delay.
+  existing Pod after a short delay.
 
-## Relevant YAML
+## The important YAML
 
-The Deployment refers to the ConfigMap, but the ConfigMap data is not copied
-into the Pod template. Later in the demo, adding the annotation shown below
-changes the template and causes a rollout.
+The Deployment points to the ConfigMap, but the ConfigMap data is not copied
+into the Pod template. Later, we add the annotation below. That small template
+change is enough to trigger a rollout.
 
 ```yaml { ignore=true }
 spec:
@@ -46,12 +47,12 @@ spec:
             name: demo-config
 ```
 
-## Expected behavior
+## What to expect
 
-1. Applying ConfigMap v2 leaves the Pod UID and Deployment revision unchanged.
-2. The environment variable stays at v1, while the mounted file becomes v2.
-3. Changing a Pod-template annotation creates a new ReplicaSet and Pod.
-4. The replacement Pod starts with v2 in both locations.
+1. Applying ConfigMap v2 keeps the same Pod and Deployment revision.
+2. The environment variable stays at v1, while the mounted file changes to v2.
+3. Changing an annotation in the Pod template creates a new ReplicaSet and Pod.
+4. The new Pod starts with v2 in both places.
 
 ## Prerequisites
 
@@ -85,10 +86,10 @@ echo "Revision: $revision"
 kubectl exec -n demo-01-configmap "$pod" -- sh -c 'echo "Environment: $DEMO_MESSAGE"; echo "Volume:      $(cat /etc/demo/message)"'
 ```
 
-## Modify only the ConfigMap
+## Change only the ConfigMap
 
-This cell waits for the mounted file to update, then checks that Kubernetes kept
-the same Pod and Deployment revision.
+This cell changes the ConfigMap, waits for the mounted file to update, and then
+checks that Kubernetes kept the same Pod and Deployment revision.
 
 ```sh { name=update-configmap-without-rollout }
 set -eu
@@ -126,10 +127,10 @@ echo "Stale environment:  $environment"
 echo "Updated volume:     $volume"
 ```
 
-## Change the Pod template
+## Change the Pod template to trigger a rollout
 
-The application does not use this annotation. It triggers a rollout simply
-because it changes the Deployment's Pod template.
+The application does not use this annotation. It triggers a rollout because it
+changes the Deployment's Pod template.
 
 ```sh { name=trigger-rollout-with-template-annotation }
 set -eu
@@ -157,14 +158,14 @@ echo "Environment:     $environment"
 echo "Volume:          $volume"
 ```
 
-## Good to know
+## A few useful details
 
-- A mounted ConfigMap can take a short time to update.
+- A mounted ConfigMap may take a short time to update.
 - ConfigMaps mounted with `subPath` do not receive projected updates.
 - An application may need its own reload feature before it notices a changed
-   file.
+  file.
 - ConfigMap-backed environment variables update only when a new container
-   starts.
+  starts.
 
 ## Learn more
 
