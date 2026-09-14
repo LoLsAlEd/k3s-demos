@@ -27,6 +27,7 @@ demos improve.
 - Helm 3 or 4
 - Permission to create and delete namespaces
 - Network access for pulling `busybox:1.36.1`
+- The `helm-diff` plugin for demo 05
 
 ```sh { name=check-prerequisites }
 set -eu
@@ -43,6 +44,7 @@ helm version --short
 2. [Helm checksum annotations](02-helm-checksum-annotations/README.md)
 3. [Versioned ConfigMaps and Secrets](03-versioned-configmaps-secrets/README.md)
 4. [Gate an upgrade with a Helm hook Job](04-helm-pre-upgrade-job/README.md)
+5. [Preview changes with kubectl diff and helm diff](05-kubectl-helm-diff/README.md)
 
 The demos are independent and use separate namespaces. Every README ends with
 a cleanup cell, so you can run the examples in any order.
@@ -64,6 +66,7 @@ a cleanup cell, so you can run the examples in any order.
 | 02 | Helm changes a checksum and replaces the Pod | A checksum connects config changes to a rollout |
 | 03 | The Deployment points to a new config name | Versioned names make each configuration distinct |
 | 04 | A Job succeeds or fails before an upgrade | A Helm hook can allow or stop an upgrade |
+| 05 | kubectl and Helm preview changes before applying them | A diff helps you review an update before changing the cluster |
 
 ## General documentation
 

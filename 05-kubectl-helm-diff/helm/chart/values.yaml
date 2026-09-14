@@ -1,0 +1,9 @@
+image:
+  repository: busybox
+  tag: 1.36.1
+
+# Both fields are intentionally changed by values-v2.yaml for a visible diff.
+replicaCount: 1
+config:
+  message: hello from Helm v1
+

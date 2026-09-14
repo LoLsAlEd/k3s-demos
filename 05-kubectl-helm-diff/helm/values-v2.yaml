@@ -1,0 +1,5 @@
+# CHANGED: helm-diff previews both changes without applying them.
+replicaCount: 2
+config:
+  message: hello from Helm v2
+

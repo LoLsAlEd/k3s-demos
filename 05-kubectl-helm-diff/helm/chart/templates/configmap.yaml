@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+# helm-diff shows this rendered data change before `helm upgrade` applies it.
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    app.kubernetes.io/name: diff-demo
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  message: {{ .Values.config.message | quote }}
+
